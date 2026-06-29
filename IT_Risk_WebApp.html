@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Risk Assessment — Inventarisasi Aset Pabrik</title>
+<style>
+/* ── RESET & BASE ─────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:    #1F3864;
+  --navy2:   #2F5496;
+  --orange:  #E8943A;
+  --orange2: #C9742A;
+  --green:   #1D9E75;
+  --red:     #C00000;
+  --yellow:  #E6A817;
+  --gray1:   #F8F9FA;
+  --gray2:   #E9ECEF;
+  --gray3:   #CED4DA;
+  --gray4:   #6C757D;
+  --dark:    #212529;
+  --white:   #FFFFFF;
+  --card-shadow: 0 2px 8px rgba(0,0,0,.08);
+  --radius:  10px;
+}
+body{
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--gray1);
+  color: var(--dark);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── HEADER ──────────────────────────────────────────── */
+.app-header{
+  background: var(--navy);
+  color: #fff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.2);
+}
+.app-header h1{
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+.app-header .badge{
+  background: var(--orange);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+/* ── LAYOUT ──────────────────────────────────────────── */
+.layout{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+@media(max-width:768px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{order:-1}
+}
+
+/* ── PROGRESS BAR ────────────────────────────────────── */
+.progress-wrap{
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--card-shadow);
+}
+.progress-steps{
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.prog-step{
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--gray2);
+  transition: background .3s;
+}
+.prog-step.done{background: var(--green)}
+.prog-step.active{background: var(--orange)}
+.progress-label{
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--gray4);
+}
+.progress-label strong{color: var(--dark)}
+
+/* ── FORM CARD ───────────────────────────────────────── */
+.form-card{
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+.card-header{
+  background: var(--navy);
+  color: #fff;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step-badge{
+  background: var(--orange);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.card-header h2{font-size: 15px;font-weight: 600}
+.card-header p{font-size: 12px;opacity: .8;margin-top: 2px}
+.card-body{padding: 20px}
+
+/* ── FORM FIELDS ─────────────────────────────────────── */
+.field{margin-bottom: 18px}
+.field label{
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 6px;
+}
+.field label .req{color: var(--red)}
+.field .hint{
+  font-size: 12px;
+  color: var(--gray4);
+  margin-bottom: 6px;
+  font-style: italic;
+}
+.field input[type=text],
+.field input[type=email],
+.field input[type=date],
+.field select,
+.field textarea{
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--gray3);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--dark);
+  background: var(--white);
+  transition: border-color .2s, box-shadow .2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.field select{
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236C757D' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus{
+  outline: none;
+  border-color: var(--navy2);
+  box-shadow: 0 0 0 3px rgba(47,84,150,.12);
+}
+.field textarea{min-height: 80px;resize: vertical}
+
+/* Radio group */
+.radio-group{display: flex;flex-direction: column;gap: 8px}
+.radio-opt{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--gray3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.radio-opt:hover{background: var(--gray1)}
+.radio-opt.selected{
+  border-color: var(--navy2);
+  background: #EBF2FB;
+}
+.radio-opt input[type=radio]{
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--navy2);
+  width: 16px;
+  height: 16px;
+}
+.radio-label{font-size: 13px;font-weight: 500}
+.radio-desc{font-size: 12px;color: var(--gray4);margin-top: 2px}
+
+/* Checkbox group */
+.check-group{display: flex;flex-direction: column;gap: 6px}
+.check-opt{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--gray3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.check-opt:hover{background: var(--gray1)}
+.check-opt.selected{
+  border-color: var(--orange);
+  background: #FFF5EC;
+}
+.check-opt.selected-primary{
+  border-color: var(--green);
+  background: #E8F7F2;
+}
+.check-opt input[type=checkbox]{
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--orange);
+  width: 16px;
+  height: 16px;
+}
+.check-opt input[type=radio]{
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--green);
+  width: 16px;
+  height: 16px;
+}
+
+/* Divider */
+.divider{
+  border: none;
+  border-top: 1.5px dashed var(--gray3);
+  margin: 20px 0;
+}
+.section-label{
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--gray4);
+  margin-bottom: 10px;
+}
+
+/* Conditional fields */
+.cond-block{
+  border-left: 3px solid var(--orange);
+  padding-left: 14px;
+  margin-bottom: 18px;
+  display: none;
+}
+.cond-block.visible{display: block}
+.cond-block.vm-block{border-color: var(--navy2)}
+.cond-block.phys-block{border-color: var(--green)}
+
+/* Error */
+.err-msg{
+  color: var(--red);
+  font-size: 12px;
+  margin-top: 6px;
+  display: none;
+}
+
+/* Navigation */
+.card-nav{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1.5px solid var(--gray2);
+}
+.btn{
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all .2s;
+}
+.btn-back{
+  background: var(--white);
+  color: var(--gray4);
+  border: 1.5px solid var(--gray3);
+}
+.btn-back:hover{background: var(--gray1)}
+.btn-back:disabled{opacity: .4;cursor: default}
+.btn-next{
+  background: var(--navy);
+  color: var(--white);
+}
+.btn-next:hover{background: var(--navy2)}
+.btn-submit{
+  background: var(--green);
+  color: var(--white);
+}
+.btn-submit:hover{background: #178A63}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.sidebar{display: flex;flex-direction: column;gap: 14px;position: sticky;top: 72px}
+
+/* Risk meter */
+.risk-card{
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+.risk-card-hdr{
+  background: var(--navy);
+  color: #fff;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.risk-card-body{padding: 16px}
+.risk-scores{
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.score-box{
+  background: var(--gray1);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.score-box .lbl{font-size: 11px;color: var(--gray4);margin-bottom: 4px}
+.score-box .val{font-size: 22px;font-weight: 700;color: var(--dark)}
+.score-box .sub{font-size: 11px;color: var(--gray4)}
+
+/* Risk level badge */
+.risk-level{
+  border-radius: 8px;
+  padding: 10px 14px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all .3s;
+  margin-bottom: 14px;
+}
+.lvl-empty{background:var(--gray2);color:var(--gray4)}
+.lvl-low{background:#E2EFDA;color:#375623}
+.lvl-medium{background:#FFF2CC;color:#7A5000}
+.lvl-high{background:#FFE0CC;color:#8A3000}
+.lvl-critical{background:#FFD0D0;color:#7A0000}
+.lvl-extreme{background:#C00000;color:#fff}
+
+/* Risk gauge */
+.gauge-wrap{margin-bottom: 14px}
+.gauge-label{
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--gray4);
+  margin-bottom: 4px;
+}
+.gauge-track{
+  height: 8px;
+  background: var(--gray2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.gauge-fill{
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #1D9E75, #E6A817, #E8943A, #C00000);
+  transition: width .4s ease;
+}
+
+/* Info card */
+.info-card{
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 14px 16px;
+  font-size: 12px;
+  color: var(--gray4);
+  line-height: 1.6;
+}
+.info-card strong{color: var(--dark);display:block;margin-bottom:6px;font-size:13px}
+.info-card .info-row{
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--gray2);
+  font-size: 12px;
+}
+.info-card .info-row:last-child{border-bottom:none}
+.info-val{font-weight:600;color:var(--dark)}
+
+/* ── STEP SECTIONS ──────────────────────────────────── */
+.step-section{display:none}
+.step-section.active{display:block}
+
+/* ── RESULT ──────────────────────────────────────────── */
+.result-wrap{
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+.result-header{
+  background: var(--navy);
+  color: #fff;
+  padding: 20px 24px;
+}
+.result-header h2{font-size: 18px;font-weight: 700;margin-bottom: 4px}
+.result-header p{font-size: 13px;opacity: .8}
+.result-body{padding: 20px 24px}
+.result-kpis{
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.kpi-box{
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.kpi-box .k-lbl{font-size: 12px;margin-bottom: 4px}
+.kpi-box .k-val{font-size: 28px;font-weight: 700}
+.kpi-box .k-sub{font-size: 11px;opacity: .7}
+.result-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
+.result-table td{padding:7px 10px;border-bottom:1px solid var(--gray2)}
+.result-table td:first-child{color:var(--gray4);width:140px}
+.result-table td:last-child{font-weight:500}
+.result-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Loading spinner */
+.spinner{
+  display:inline-block;width:16px;height:16px;
+  border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;
+  animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.submit-status{
+  padding:12px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none
+}
+.submit-ok{background:#E2EFDA;color:#375623}
+.submit-err{background:#FFD0D0;color:#7A0000}
+
+/* Tooltip for EOL */
+.eol-badge{
+  display:inline-block;background:#C00000;color:#fff;
+  font-size:10px;font-weight:700;padding:1px 6px;
+  border-radius:4px;margin-left:6px;vertical-align:middle
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <h1>🏭 IT Risk Assessment — Inventarisasi Aset Pabrik</h1>
+  <span class="badge">Acuan: ISO 27001 · IEC 62443 · NIST CSF</span>
+</header>
+
+<div class="layout" id="mainLayout">
+
+  <!-- ── MAIN FORM ── -->
+  <div class="main-col">
+
+    <!-- Progress -->
+    <div class="progress-wrap">
+      <div class="progress-steps" id="progSteps"></div>
+      <div class="progress-label">
+        <span id="progLabel">Step 1 dari 6</span>
+        <strong id="progTitle">Informasi Pengisi</strong>
+      </div>
+    </div>
+
+    <!-- Form Steps -->
+    <div class="form-card" id="formCard">
+
+      <!-- ╔═══ STEP 1: INFORMASI PENGISI ═══╗ -->
+      <div class="step-section active" id="step1">
+        <div class="card-header">
+          <span class="step-badge">Step 1 dari 6</span>
+          <div>
+            <h2>Informasi Pengisi & Lokasi</h2>
+            <p>Identitas tim yang bertanggung jawab atas aset ini</p>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <div class="field">
+            <label>Departemen / Tim <span class="req">*</span></label>
+            <select id="dept">
+              <option value="">— Pilih departemen —</option>
+              <option value="IT Team">IT Team</option>
+              <option value="Automation Team">Automation Team</option>
+              <option value="Power Plant Team">Power Plant Team</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Nama lengkap pengisi <span class="req">*</span></label>
+            <input type="text" id="namaPengisi" placeholder="Nama Anda">
+          </div>
+
+          <div class="field">
+            <label>Jabatan / posisi <span class="req">*</span></label>
+            <input type="text" id="jabatan" placeholder="Contoh: IT Engineer, OT Supervisor, Kepala Maintenance">
+          </div>
+
+          <div class="field">
+            <label>Email <span class="req">*</span></label>
+            <input type="email" id="emailPengisi" placeholder="nama@perusahaan.com">
+          </div>
+
+          <div class="field">
+            <label>Tanggal pengisian <span class="req">*</span></label>
+            <input type="date" id="tglIsi">
+          </div>
+
+          <div class="field">
+            <label>Lokasi / area aset <span class="req">*</span></label>
+            <select id="lokasi">
+              <option value="">— Pilih lokasi —</option>
+              <option value="IT Main Office Service Room">IT Main Office Service Room</option>
+              <option value="IT Server Room">IT Server Room</option>
+              <option value="Automation Server Room">Automation Server Room</option>
+              <option value="Power Plant Server Room">Power Plant Server Room</option>
+              <option value="Substation">Substation</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+
+        </div>
+        <div class="card-nav">
+          <button class="btn btn-back" disabled>← Kembali</button>
+          <button class="btn btn-next" onclick="nextStep(1)">Lanjutkan →</button>
+        </div>
+      </div>
+
+      <!-- ╔═══ STEP 2: IDENTIFIKASI ASET ═══╗ -->
+      <div class="step-section" id="step2">
+        <div class="card-header">
+          <span class="step-badge">Step 2 dari 6</span>
+          <div>
+            <h2>Identifikasi Aset</h2>
+            <p>Data teknis dan administratif aset yang dinilai</p>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <div class="field">
+            <label>Nama aset <span class="req">*</span></label>
+            <div class="hint">Contoh: Production Server 01, Core Switch Lt.2, PLC Mesin Press Line 1</div>
+            <input type="text" id="namaAset" placeholder="Nama aset...">
+          </div>
+
+          <div class="field">
+            <label>ID Aset / Asset Tag</label>
+            <div class="hint">Nomor tag inventaris jika sudah ada</div>
+            <input type="text" id="idAset" placeholder="Opsional">
+          </div>
+
+          <div class="field">
+            <label>Jenis aset <span class="req">*</span></label>
+            <div class="hint">Pilihan ini menentukan pertanyaan yang muncul selanjutnya</div>
+            <div class="radio-group" id="jenisGroup">
+              <label class="radio-opt" onclick="pickJenis('Server Physical',this)">
+                <input type="radio" name="jenis" value="Server Physical">
+                <div><div class="radio-label">Server Physical</div>
+                  <div class="radio-desc">Server fisik / bare-metal — ESXi host, standalone server</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('Virtual Machine',this)">
+                <input type="radio" name="jenis" value="Virtual Machine">
+                <div><div class="radio-label">Virtual Machine (VM)</div>
+                  <div class="radio-desc">VM yang berjalan di atas hypervisor ESXi, Hyper-V, dsb.</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('Perangkat Jaringan',this)">
+                <input type="radio" name="jenis" value="Perangkat Jaringan">
+                <div><div class="radio-label">Perangkat Jaringan</div>
+                  <div class="radio-desc">Switch, Router, Firewall, Access Point, Load Balancer</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('OT / ICS — PLC, SCADA, HMI',this)">
+                <input type="radio" name="jenis" value="OT / ICS — PLC, SCADA, HMI">
+                <div><div class="radio-label">OT / ICS — PLC, SCADA, HMI</div>
+                  <div class="radio-desc">Sistem kontrol industri di area produksi</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('DCS',this)">
+                <input type="radio" name="jenis" value="DCS">
+                <div><div class="radio-label">DCS (Distributed Control System)</div>
+                  <div class="radio-desc">Sistem kontrol terdistribusi</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('EMS',this)">
+                <input type="radio" name="jenis" value="EMS">
+                <div><div class="radio-label">EMS (Energy Management System)</div>
+                  <div class="radio-desc">Sistem manajemen energi</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('Protection Relay / RTU',this)">
+                <input type="radio" name="jenis" value="Protection Relay / RTU">
+                <div><div class="radio-label">Protection Relay / RTU</div>
+                  <div class="radio-desc">Relay proteksi, Remote Terminal Unit</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('End User Device',this)">
+                <input type="radio" name="jenis" value="End User Device">
+                <div><div class="radio-label">End User Device</div>
+                  <div class="radio-desc">PC operator, Laptop, Tablet</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('Storage / NAS / SAN',this)">
+                <input type="radio" name="jenis" value="Storage / NAS / SAN">
+                <div><div class="radio-label">Storage / NAS / SAN</div>
+                  <div class="radio-desc">Perangkat penyimpanan data terpusat</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('Keamanan — CCTV, Access Control',this)">
+                <input type="radio" name="jenis" value="Keamanan — CCTV, Access Control">
+                <div><div class="radio-label">Keamanan — CCTV, Access Control</div>
+                  <div class="radio-desc">NVR, kamera, sistem akses pintu</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('Power — UPS, PDU, Generator',this)">
+                <input type="radio" name="jenis" value="Power — UPS, PDU, Generator">
+                <div><div class="radio-label">Power — UPS, PDU, Generator</div>
+                  <div class="radio-desc">Sistem kelistrikan pendukung</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickJenis('Lainnya',this)">
+                <input type="radio" name="jenis" value="Lainnya">
+                <div><div class="radio-label">Lainnya</div></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- KONDITIONAL: Physical Server -->
+          <div class="cond-block phys-block" id="physBlock">
+            <div class="section-label">📦 Detail Physical Server</div>
+
+            <div class="field">
+              <label>Vendor / Merek <span class="req">*</span></label>
+              <div class="hint">Contoh: Dell, HP, Cisco, Siemens, Schneider, Allen-Bradley</div>
+              <input type="text" id="vendor" placeholder="Nama vendor...">
+            </div>
+            <div class="field">
+              <label>Model / Tipe Perangkat <span class="req">*</span></label>
+              <div class="hint">Contoh: PowerEdge R740, ProLiant DL380, Catalyst 9300, S7-1500</div>
+              <input type="text" id="model" placeholder="Model...">
+            </div>
+            <div class="field">
+              <label>Nomor Seri (Serial Number)</label>
+              <div class="hint">Tertera di label fisik perangkat — penting untuk klaim garansi</div>
+              <input type="text" id="serialNumber" placeholder="Opsional">
+            </div>
+            <div class="field">
+              <label>Tahun pembelian / instalasi <span class="req">*</span></label>
+              <select id="tahunBeli">
+                <option value="">— Pilih tahun —</option>
+                <option value="2024 atau 2025">2024 atau 2025</option>
+                <option value="2022 atau 2023">2022 atau 2023</option>
+                <option value="2020 atau 2021">2020 atau 2021</option>
+                <option value="2018 atau 2019">2018 atau 2019</option>
+                <option value="2015 hingga 2017">2015 hingga 2017</option>
+                <option value="Sebelum 2015">Sebelum 2015 (lebih dari 10 tahun)</option>
+                <option value="Tidak diketahui">Tidak diketahui</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>OS / Hypervisor yang dipakai <span class="req">*</span></label>
+              <select id="osPhysical">
+                <option value="">— Pilih OS —</option>
+                <optgroup label="VMware ESXi (Hypervisor)">
+                  <option value="VMware ESXi 6.5 (EOL)">VMware ESXi 6.5 ⚠️ EOL</option>
+                  <option value="VMware ESXi 6.7 (EOL)">VMware ESXi 6.7 ⚠️ EOL</option>
+                  <option value="VMware ESXi 7.0">VMware ESXi 7.0</option>
+                  <option value="VMware ESXi 8.0">VMware ESXi 8.0 (terbaru)</option>
+                </optgroup>
+                <optgroup label="Windows Server">
+                  <option value="Windows Server 2003 (EOL)">Windows Server 2003 ⚠️ EOL</option>
+                  <option value="Windows Server 2008 (EOL)">Windows Server 2008 / R2 ⚠️ EOL</option>
+                  <option value="Windows Server 2012 (EOL)">Windows Server 2012 / R2 ⚠️ EOL</option>
+                  <option value="Windows Server 2016">Windows Server 2016</option>
+                  <option value="Windows Server 2019">Windows Server 2019</option>
+                  <option value="Windows Server 2022">Windows Server 2022</option>
+                </optgroup>
+                <optgroup label="Linux">
+                  <option value="Linux — Ubuntu Server">Linux — Ubuntu Server</option>
+                  <option value="Linux — CentOS / RHEL">Linux — CentOS / RHEL</option>
+                  <option value="Linux — Debian">Linux — Debian</option>
+                  <option value="Linux — Lainnya">Linux — Lainnya</option>
+                </optgroup>
+                <optgroup label="Lainnya">
+                  <option value="Embedded OS / Proprietary">Embedded OS / Proprietary</option>
+                  <option value="Tidak ada OS">Tidak ada OS (network device)</option>
+                  <option value="Lainnya">Lainnya</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <!-- KONDITIONAL: Virtual Machine -->
+          <div class="cond-block vm-block" id="vmBlock">
+            <div class="section-label">💻 Detail Virtual Machine</div>
+
+            <div class="field">
+              <label>Platform / Hypervisor <span class="req">*</span></label>
+              <div class="radio-group" id="platformGroup">
+                <label class="radio-opt" onclick="pickPlatform('VMware vSphere / ESXi',this)">
+                  <input type="radio" name="platform" value="VMware vSphere / ESXi">
+                  <div><div class="radio-label">VMware vSphere / ESXi</div>
+                    <div class="radio-desc">Platform virtualisasi enterprise VMware</div></div>
+                </label>
+                <label class="radio-opt" onclick="pickPlatform('Microsoft Hyper-V',this)">
+                  <input type="radio" name="platform" value="Microsoft Hyper-V">
+                  <div><div class="radio-label">Microsoft Hyper-V</div>
+                    <div class="radio-desc">Terintegrasi dengan Windows Server</div></div>
+                </label>
+                <label class="radio-opt" onclick="pickPlatform('Proxmox VE',this)">
+                  <input type="radio" name="platform" value="Proxmox VE">
+                  <div><div class="radio-label">Proxmox VE</div>
+                    <div class="radio-desc">Open source, berbasis KVM + LXC</div></div>
+                </label>
+                <label class="radio-opt" onclick="pickPlatform('Oracle VirtualBox',this)">
+                  <input type="radio" name="platform" value="Oracle VirtualBox">
+                  <div><div class="radio-label">Oracle VirtualBox</div>
+                    <div class="radio-desc">Virtualisasi desktop Oracle</div></div>
+                </label>
+                <label class="radio-opt" onclick="pickPlatform('KVM / libvirt',this)">
+                  <input type="radio" name="platform" value="KVM / libvirt">
+                  <div><div class="radio-label">KVM / libvirt</div>
+                    <div class="radio-desc">Kernel-based Virtual Machine di Linux</div></div>
+                </label>
+                <label class="radio-opt" onclick="pickPlatform('Lainnya',this)">
+                  <input type="radio" name="platform" value="Lainnya">
+                  <div><div class="radio-label">Lainnya</div></div>
+                </label>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Host Fisik tempat VM ini berjalan <span class="req">*</span></label>
+              <div class="hint">Pilih server physical yang sudah pernah didaftarkan — daftar diambil real-time dari database</div>
+              <select id="hostFisik">
+                <option value="">— Memuat daftar host fisik... —</option>
+              </select>
+              <div id="hostLoadStatus" style="font-size:12px;color:var(--gray4);margin-top:4px"></div>
+            </div>
+
+            <div class="field">
+              <label>OS / Template VM <span class="req">*</span></label>
+              <select id="osVM">
+                <option value="">— Pilih OS —</option>
+                <optgroup label="Windows Client">
+                  <option value="Windows 10">Windows 10</option>
+                  <option value="Windows 11">Windows 11</option>
+                  <option value="Windows XP (EOL)">Windows XP ⚠️ EOL</option>
+                  <option value="Windows 7 (EOL)">Windows 7 ⚠️ EOL</option>
+                </optgroup>
+                <optgroup label="Windows Server">
+                  <option value="Windows Server 2016">Windows Server 2016</option>
+                  <option value="Windows Server 2019">Windows Server 2019</option>
+                  <option value="Windows Server 2022">Windows Server 2022</option>
+                  <option value="Windows Server 2012 (EOL)">Windows Server 2012 ⚠️ EOL</option>
+                  <option value="Windows Server 2008 (EOL)">Windows Server 2008 ⚠️ EOL</option>
+                </optgroup>
+                <optgroup label="Linux">
+                  <option value="Linux — Ubuntu">Linux — Ubuntu</option>
+                  <option value="Linux — CentOS / RHEL">Linux — CentOS / RHEL</option>
+                  <option value="Linux — Debian">Linux — Debian</option>
+                  <option value="Linux — Lainnya">Linux — Lainnya</option>
+                </optgroup>
+                <optgroup label="Lainnya">
+                  <option value="Lainnya">Lainnya</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Apakah snapshot VM berjalan rutin? <span class="req">*</span></label>
+              <select id="snapshot">
+                <option value="">— Pilih —</option>
+                <option value="Snapshot otomatis harian">Snapshot otomatis setiap hari</option>
+                <option value="Snapshot otomatis mingguan">Snapshot otomatis mingguan</option>
+                <option value="Snapshot manual, tidak rutin">Manual dan tidak rutin</option>
+                <option value="Tidak ada snapshot">Tidak ada snapshot sama sekali</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>VM berjalan di berapa host fisik? <span class="req">*</span></label>
+              <select id="jumlahHost">
+                <option value="">— Pilih —</option>
+                <option value="Cluster HA 2+ host — auto failover">Cluster HA 2 host atau lebih — auto failover</option>
+                <option value="2 host — failover manual">2 host — failover manual</option>
+                <option value="1 host saja — single point of failure">1 host saja — single point of failure</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- VLAN — muncul untuk semua jenis aset -->
+          <div class="field">
+            <label>VLAN / Segmen Jaringan</label>
+            <select id="vlan">
+              <option value="">— Pilih VLAN —</option>
+              <option value="VLAN 22 — LAB">VLAN 22 — LAB</option>
+              <option value="VLAN 23 — PLC">VLAN 23 — PLC</option>
+              <option value="VLAN 24 — HMI">VLAN 24 — HMI</option>
+              <option value="VLAN 27 — CEMS">VLAN 27 — CEMS</option>
+              <option value="VLAN 28 — Power Plant">VLAN 28 — Power Plant</option>
+              <option value="VLAN 160 — LAN Main Office">VLAN 160 — LAN Main Office</option>
+              <option value="VLAN 161 — LAN CCR">VLAN 161 — LAN CCR</option>
+              <option value="VLAN 162 — DMZ">VLAN 162 — DMZ</option>
+              <option value="VLAN 170 — Server">VLAN 170 — Server</option>
+              <option value="VLAN 401 — SCHNEIDER_OPC">VLAN 401 — SCHNEIDER_OPC</option>
+              <option value="VLAN 403 — PLC">VLAN 403 — PLC</option>
+              <option value="Offline / tidak terhubung jaringan">Offline / tidak terhubung jaringan</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>IP Address</label>
+            <div class="hint">Kosongkan jika offline atau tidak diketahui</div>
+            <input type="text" id="ipAddress" placeholder="Contoh: 192.168.170.10">
+          </div>
+
+          <div class="field">
+            <label>Hostname</label>
+            <input type="text" id="hostname" placeholder="Contoh: SRV-PROD-01, SW-CORE-LT1">
+          </div>
+
+          <div class="field">
+            <label>Nama PIC Teknis / Pemilik Aset <span class="req">*</span></label>
+            <input type="text" id="picTeknis" placeholder="Nama orang yang bertanggung jawab atas aset ini">
+          </div>
+
+          <div class="field">
+            <label>Kontak PIC Teknis (email / HP) <span class="req">*</span></label>
+            <input type="text" id="kontakPIC" placeholder="email@perusahaan.com atau nomor HP">
+          </div>
+
+          <div class="field">
+            <label>Vendor Support / Kontrak Maintenance</label>
+            <input type="text" id="vendorSupport" placeholder="Nama vendor + nomor kontrak (opsional)">
+          </div>
+
+        </div>
+        <div class="card-nav">
+          <button class="btn btn-back" onclick="prevStep(2)">← Kembali</button>
+          <button class="btn btn-next" onclick="nextStep(2)">Lanjutkan →</button>
+        </div>
+      </div>
+
+      <!-- ╔═══ STEP 3: KONDISI TEKNIS ═══╗ -->
+      <div class="step-section" id="step3">
+        <div class="card-header">
+          <span class="step-badge">Step 3 dari 6</span>
+          <div>
+            <h2>Kondisi Teknis & Keamanan</h2>
+            <p>Status patch, jaringan, backup, dan akses — berlaku untuk semua aset</p>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <div class="field">
+            <label>Status patch / update OS atau Firmware <span class="req">*</span></label>
+            <select id="patch">
+              <option value="">— Pilih —</option>
+              <option value="Rutin — patch kurang dari 1 bulan">Rutin — patch diterapkan kurang dari 1 bulan setelah rilis</option>
+              <option value="Terlambat — 1 sampai 6 bulan">Sering terlambat — 1 sampai 6 bulan setelah rilis</option>
+              <option value="Jarang — lebih dari 6 bulan">Jarang diupdate — lebih dari 6 bulan</option>
+              <option value="Tidak pernah atau EOL">Tidak pernah diupdate atau OS sudah End-of-Life</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Koneksi jaringan aset ini <span class="req">*</span></label>
+            <select id="koneksi">
+              <option value="">— Pilih —</option>
+              <option value="Terisolasi penuh / air-gap">Terisolasi penuh / air-gap — tidak terhubung jaringan apapun</option>
+              <option value="Jaringan OT saja — tersegmentasi">Jaringan OT saja — tersegmentasi penuh dari IT</option>
+              <option value="Jaringan IT internal saja">Jaringan IT internal saja — LAN/VLAN, tidak ke internet</option>
+              <option value="IT dan OT terhubung — belum tersegmentasi">IT dan OT terhubung — belum tersegmentasi</option>
+              <option value="Terkoneksi internet tanpa perlindungan">Terkoneksi langsung ke internet</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Kontrol akses ke aset ini <span class="req">*</span></label>
+            <select id="akses">
+              <option value="">— Pilih —</option>
+              <option value="MFA dan role-based access control aktif">MFA dan role-based access control aktif</option>
+              <option value="Password kuat saja tanpa MFA">Password kuat saja tanpa MFA — diganti rutin</option>
+              <option value="Password sederhana atau jarang diganti">Password sederhana atau jarang diganti</option>
+              <option value="Tidak ada kontrol akses">Tidak ada kontrol akses khusus</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Status backup data <span class="req">*</span></label>
+            <select id="backup">
+              <option value="">— Pilih —</option>
+              <option value="Backup otomatis harian offsite atau cloud">Backup otomatis harian dan tersimpan offsite atau cloud</option>
+              <option value="Backup otomatis lokal saja">Backup otomatis tetapi hanya tersimpan lokal</option>
+              <option value="Backup manual tidak rutin">Backup manual dan tidak rutin</option>
+              <option value="Tidak ada backup">Tidak ada backup sama sekali</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Monitoring dan alerting <span class="req">*</span></label>
+            <select id="monitoring">
+              <option value="">— Pilih —</option>
+              <option value="Monitoring otomatis 24 jam dengan alert">Monitoring otomatis 24 jam dengan alert — Nagios, Zabbix, PRTG</option>
+              <option value="Monitoring ada tapi tidak lengkap">Monitoring ada tapi tidak lengkap</option>
+              <option value="Cek manual saja tanpa tools">Cek manual saja tanpa tools monitoring</option>
+              <option value="Tidak ada monitoring">Tidak ada monitoring sama sekali</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Antivirus / EDR <span class="req">*</span></label>
+            <select id="antivirus">
+              <option value="">— Pilih —</option>
+              <option value="EDR enterprise aktif dan terupdate">EDR enterprise aktif dan terupdate</option>
+              <option value="Antivirus standar aktif dan terupdate">Antivirus standar aktif dan terupdate</option>
+              <option value="Ada tapi jarang diupdate">Ada tapi jarang diupdate atau tidak aktif</option>
+              <option value="Tidak berlaku — OT atau network device">Tidak berlaku — aset OT / network device</option>
+              <option value="Tidak ada antivirus">Tidak ada antivirus sama sekali</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Terakhir kali diaudit keamanan <span class="req">*</span></label>
+            <select id="auditTerakhir">
+              <option value="">— Pilih —</option>
+              <option value="Kurang dari 6 bulan">Kurang dari 6 bulan yang lalu</option>
+              <option value="6 bulan hingga 1 tahun">6 bulan hingga 1 tahun yang lalu</option>
+              <option value="1 hingga 2 tahun">1 hingga 2 tahun yang lalu</option>
+              <option value="Lebih dari 2 tahun">Lebih dari 2 tahun yang lalu</option>
+              <option value="Belum pernah diaudit">Belum pernah diaudit</option>
+            </select>
+          </div>
+
+        </div>
+        <div class="card-nav">
+          <button class="btn btn-back" onclick="prevStep(3)">← Kembali</button>
+          <button class="btn btn-next" onclick="nextStep(3)">Lanjutkan →</button>
+        </div>
+      </div>
+
+      <!-- ╔═══ STEP 4: PENILAIAN ANCAMAN ═══╗ -->
+      <div class="step-section" id="step4">
+        <div class="card-header">
+          <span class="step-badge">Step 4 dari 6</span>
+          <div>
+            <h2>Penilaian Ancaman</h2>
+            <p>Identifikasi semua ancaman, lalu tentukan yang paling kritis</p>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <div class="section-label">Bagian A — Centang semua ancaman yang relevan</div>
+          <div class="field">
+            <div class="hint">Boleh pilih lebih dari satu — untuk kelengkapan dokumentasi audit</div>
+            <div class="check-group" id="ancamanAllGroup">
+              <label class="check-opt" onclick="toggleAncaman('Ketersediaan',this)">
+                <input type="checkbox" value="Ketersediaan">
+                <div><div class="radio-label">Ketersediaan</div>
+                  <div class="radio-desc">Downtime, hardware failure, aset mati dan produksi terhenti</div></div>
+              </label>
+              <label class="check-opt" onclick="toggleAncaman('Keamanan',this)">
+                <input type="checkbox" value="Keamanan">
+                <div><div class="radio-label">Keamanan</div>
+                  <div class="radio-desc">Malware, ransomware, hacking, kebocoran data</div></div>
+              </label>
+              <label class="check-opt" onclick="toggleAncaman('Human Error',this)">
+                <input type="checkbox" value="Human Error">
+                <div><div class="radio-label">Human Error</div>
+                  <div class="radio-desc">Salah konfigurasi, salah hapus, kesalahan operator</div></div>
+              </label>
+              <label class="check-opt" onclick="toggleAncaman('OT Safety',this)">
+                <input type="checkbox" value="OT Safety">
+                <div><div class="radio-label">OT Safety</div>
+                  <div class="radio-desc">PLC atau SCADA diretas dan memicu kecelakaan kerja</div></div>
+              </label>
+              <label class="check-opt" onclick="toggleAncaman('Kehilangan Data',this)">
+                <input type="checkbox" value="Kehilangan Data">
+                <div><div class="radio-label">Kehilangan Data</div>
+                  <div class="radio-desc">Backup gagal, storage rusak, data produksi hilang permanen</div></div>
+              </label>
+              <label class="check-opt" onclick="toggleAncaman('Supply Chain',this)">
+                <input type="checkbox" value="Supply Chain">
+                <div><div class="radio-label">Supply Chain</div>
+                  <div class="radio-desc">Vendor tidak tersedia, komponen tidak ada di pasaran</div></div>
+              </label>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="section-label">Bagian B — Ancaman yang PALING kritis (pilih satu)</div>
+          <div class="field">
+            <div class="hint">Dari yang dicentang di atas, pilih satu yang dampaknya paling besar</div>
+            <div class="check-group" id="ancamanUtamaGroup">
+              <div style="font-size:12px;color:var(--gray4);font-style:italic;padding:8px 0">
+                Centang minimal satu ancaman di Bagian A terlebih dahulu
+              </div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="field">
+            <label>Riwayat insiden pada aset ini <span class="req">*</span></label>
+            <div class="radio-group" id="insidenGroup">
+              <label class="radio-opt" onclick="pickRadio('insiden','Belum pernah ada insiden',this)">
+                <input type="radio" name="insiden" value="Belum pernah ada insiden">
+                <div><div class="radio-label">Belum pernah ada insiden</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('insiden','Pernah minor — downtime kurang dari 1 jam',this)">
+                <input type="radio" name="insiden" value="Pernah minor — downtime kurang dari 1 jam">
+                <div><div class="radio-label">Pernah — minor</div>
+                  <div class="radio-desc">Downtime kurang dari 1 jam, cepat teratasi</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('insiden','Pernah sedang — downtime 1 sampai 24 jam',this)">
+                <input type="radio" name="insiden" value="Pernah sedang — downtime 1 sampai 24 jam">
+                <div><div class="radio-label">Pernah — sedang</div>
+                  <div class="radio-desc">Downtime 1 sampai 24 jam, sempat ganggu produksi</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('insiden','Pernah besar — downtime lebih dari 1 hari',this)">
+                <input type="radio" name="insiden" value="Pernah besar — downtime lebih dari 1 hari">
+                <div><div class="radio-label">Pernah — besar</div>
+                  <div class="radio-desc">Downtime lebih dari 1 hari, kerugian signifikan</div></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Jika pernah insiden, jelaskan singkat</label>
+            <textarea id="keteranganInsiden" placeholder="Contoh: Server down 4 jam akibat PSU rusak, Januari 2023. Kosongkan jika belum pernah."></textarea>
+          </div>
+
+        </div>
+        <div class="card-nav">
+          <button class="btn btn-back" onclick="prevStep(4)">← Kembali</button>
+          <button class="btn btn-next" onclick="nextStep(4)">Lanjutkan →</button>
+        </div>
+      </div>
+
+      <!-- ╔═══ STEP 5: DAMPAK BISNIS ═══╗ -->
+      <div class="step-section" id="step5">
+        <div class="card-header">
+          <span class="step-badge">Step 5 dari 6</span>
+          <div>
+            <h2>Dampak Bisnis</h2>
+            <p>Seberapa kritis aset ini terhadap operasional pabrik</p>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <div class="field">
+            <label>Jika aset ini mati, dampak ke produksi? <span class="req">*</span></label>
+            <div class="radio-group">
+              <label class="radio-opt" onclick="pickRadio('dampakProd','Tidak berdampak langsung',this)">
+                <input type="radio" name="dampakProd" value="Tidak berdampak langsung">
+                <div><div class="radio-label">Tidak berdampak langsung</div>
+                  <div class="radio-desc">Aset pendukung, ada alternatif lain</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('dampakProd','Produksi melambat tapi masih bisa berjalan',this)">
+                <input type="radio" name="dampakProd" value="Produksi melambat tapi masih bisa berjalan">
+                <div><div class="radio-label">Produksi melambat tapi masih berjalan</div>
+                  <div class="radio-desc">Ada workaround manual sementara</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('dampakProd','Sebagian lini produksi berhenti',this)">
+                <input type="radio" name="dampakProd" value="Sebagian lini produksi berhenti">
+                <div><div class="radio-label">Sebagian lini produksi berhenti</div>
+                  <div class="radio-desc">Satu atau dua lini terpengaruh</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('dampakProd','Seluruh produksi berhenti total',this)">
+                <input type="radio" name="dampakProd" value="Seluruh produksi berhenti total">
+                <div><div class="radio-label">Seluruh produksi berhenti total</div>
+                  <div class="radio-desc">Single point of failure seluruh pabrik</div></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Toleransi downtime maksimum (RTO) <span class="req">*</span></label>
+            <div class="radio-group">
+              <label class="radio-opt" onclick="pickRadio('rto','Maksimal 1 jam',this)">
+                <input type="radio" name="rto" value="Maksimal 1 jam">
+                <div><div class="radio-label">Maksimal 1 jam</div>
+                  <div class="radio-desc">Sangat kritis — harus pulih sangat cepat</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('rto','Maksimal 4 jam',this)">
+                <input type="radio" name="rto" value="Maksimal 4 jam">
+                <div><div class="radio-label">Maksimal 4 jam</div>
+                  <div class="radio-desc">Kritis — ada sedikit toleransi</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('rto','Maksimal 1 hari',this)">
+                <input type="radio" name="rto" value="Maksimal 1 hari">
+                <div><div class="radio-label">Maksimal 1 hari</div>
+                  <div class="radio-desc">Penting — ada prosedur manual sementara</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('rto','Lebih dari 1 hari masih oke',this)">
+                <input type="radio" name="rto" value="Lebih dari 1 hari masih oke">
+                <div><div class="radio-label">Lebih dari 1 hari masih oke</div>
+                  <div class="radio-desc">Tidak terlalu kritis untuk operasional harian</div></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Nilai estimasi aset (harga beli / penggantian) <span class="req">*</span></label>
+            <div class="radio-group">
+              <label class="radio-opt" onclick="pickRadio('nilaiAset','Kurang dari Rp 10 juta',this)">
+                <input type="radio" name="nilaiAset" value="Kurang dari Rp 10 juta">
+                <div><div class="radio-label">Kurang dari Rp 10 juta</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('nilaiAset','Rp 10 juta sampai Rp 50 juta',this)">
+                <input type="radio" name="nilaiAset" value="Rp 10 juta sampai Rp 50 juta">
+                <div><div class="radio-label">Rp 10 juta sampai Rp 50 juta</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('nilaiAset','Rp 50 juta sampai Rp 200 juta',this)">
+                <input type="radio" name="nilaiAset" value="Rp 50 juta sampai Rp 200 juta">
+                <div><div class="radio-label">Rp 50 juta sampai Rp 200 juta</div></div>
+              </label>
+              <label class="radio-opt" onclick="pickRadio('nilaiAset','Lebih dari Rp 200 juta',this)">
+                <input type="radio" name="nilaiAset" value="Lebih dari Rp 200 juta">
+                <div><div class="radio-label">Lebih dari Rp 200 juta</div></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Apakah ada SOP / prosedur darurat tertulis? <span class="req">*</span></label>
+            <select id="sopDarurat">
+              <option value="">— Pilih —</option>
+              <option value="SOP lengkap dan staf sudah dilatih">SOP lengkap dan staf sudah dilatih</option>
+              <option value="Ada SOP tapi staf belum familiar">Ada SOP tapi staf belum familiar — perlu refresher</option>
+              <option value="Ada SOP tapi sudah outdated">Ada SOP tapi sudah outdated — perlu diupdate</option>
+              <option value="Tidak ada SOP">Tidak ada SOP sama sekali</option>
+            </select>
+          </div>
+
+        </div>
+        <div class="card-nav">
+          <button class="btn btn-back" onclick="prevStep(5)">← Kembali</button>
+          <button class="btn btn-next" onclick="nextStep(5)">Lanjutkan →</button>
+        </div>
+      </div>
+
+      <!-- ╔═══ STEP 6: PENUTUP ═══╗ -->
+      <div class="step-section" id="step6">
+        <div class="card-header">
+          <span class="step-badge">Step 6 dari 6</span>
+          <div>
+            <h2>Rekomendasi & Penutup</h2>
+            <p>Saran dari Anda sebagai orang yang paling paham aset ini</p>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <div class="field">
+            <label>Rekomendasi mitigasi dari pengisi</label>
+            <div class="hint">Saran perbaikan berdasarkan pengetahuan Anda tentang aset ini</div>
+            <textarea id="rekomitigasi" placeholder="Contoh: Perlu beli spare PSU, perlu upgrade firmware, perlu segmentasi VLAN..."></textarea>
+          </div>
+
+          <div class="field">
+            <label>Informasi tambahan</label>
+            <textarea id="infoTambahan" placeholder="Catatan lain yang belum tercakup di atas (opsional)"></textarea>
+          </div>
+
+          <div style="background:#EBF2FB;border-radius:8px;padding:14px;font-size:13px;color:var(--navy2);line-height:1.6;margin-bottom:16px">
+            <strong style="display:block;margin-bottom:6px">⚠️ Penting sebelum Submit:</strong>
+            Pastikan semua data sudah benar. Setelah Submit, data akan langsung masuk ke Google Sheets
+            dan risk score akan dihitung otomatis. Anda akan menerima email konfirmasi.
+          </div>
+
+          <div class="submit-status" id="submitStatus"></div>
+
+        </div>
+        <div class="card-nav">
+          <button class="btn btn-back" onclick="prevStep(6)">← Kembali</button>
+          <button class="btn btn-submit" id="btnSubmit" onclick="submitForm()">
+            Submit Data Aset
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /form-card -->
+  </div><!-- /main-col -->
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+
+    <!-- Step 1-5: Progress Checklist (risk score disembunyikan) -->
+    <div class="risk-card" id="sidebarChecklist">
+      <div class="risk-card-hdr">📋 Progress Pengisian</div>
+      <div class="risk-card-body" style="padding:12px 16px">
+        <div id="checklistItems" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div style="margin-top:14px;padding:10px 12px;background:var(--gray1);border-radius:8px;font-size:12px;color:var(--gray4);line-height:1.5">
+          💡 Risk score ditampilkan di Step 6 setelah semua pertanyaan dijawab
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 6: Risk Score (HANYA muncul di step terakhir) -->
+    <div class="risk-card" id="sidebarScore" style="display:none">
+      <div class="risk-card-hdr">📊 Risk Score — Preview Akhir</div>
+      <div class="risk-card-body">
+        <div class="risk-scores">
+          <div class="score-box"><div class="lbl">Likelihood</div><div class="val" id="scoreL">—</div><div class="sub">dari 5</div></div>
+          <div class="score-box"><div class="lbl">Impact</div><div class="val" id="scoreI">—</div><div class="sub">dari 5</div></div>
+          <div class="score-box"><div class="lbl">Score</div><div class="val" id="scoreTotal">—</div><div class="sub">dari 25</div></div>
+        </div>
+        <div class="gauge-wrap">
+          <div class="gauge-label"><span>Tingkat Risiko</span><span id="gaugePct">0%</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="gaugeFill" style="width:0%"></div></div>
+        </div>
+        <div class="risk-level lvl-empty" id="riskLevel">Menghitung skor...</div>
+        <div style="font-size:11px;color:var(--gray4);line-height:1.5;margin-top:10px">
+          Skor final dihitung ulang di server saat Submit.<br>
+          Jika ada yang ingin dikoreksi, klik Kembali.
+        </div>
+        <div style="margin-top:14px;border-top:1px solid var(--gray2);padding-top:12px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray4);margin-bottom:8px">Faktor yang mempengaruhi skor</div>
+          <div id="riskFactors" style="display:flex;flex-direction:column;gap:4px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ringkasan selalu tampil -->
+    <div class="info-card">
+      <strong>📋 Ringkasan Pengisian</strong>
+      <div class="info-row"><span>Tim</span><span class="info-val" id="sumDept">—</span></div>
+      <div class="info-row"><span>Jenis Aset</span><span class="info-val" id="sumJenis">—</span></div>
+      <div class="info-row"><span>Nama Aset</span><span class="info-val" id="sumNama">—</span></div>
+      <div class="info-row"><span>Lokasi</span><span class="info-val" id="sumLokasi">—</span></div>
+      <div class="info-row"><span>VLAN</span><span class="info-val" id="sumVlan">—</span></div>
+    </div>
+
+    <!-- Warning -->
+    <div class="info-card" style="background:#FFF5EC;border-left:3px solid var(--orange)">
+      <strong style="color:var(--orange)">⚠️ Jangan tutup browser</strong>
+      Jawaban tidak tersimpan otomatis. Pastikan klik <strong>Submit</strong> di Step 6 sebelum menutup tab ini.
+    </div>
+
+  </div><!-- /sidebar -->
+</div><!-- /layout -->
+
+
+<script>
+// ── KONFIGURASI ────────────────────────────────────────────
+// GANTI dengan URL Apps Script Web App Anda setelah deploy
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwdkmVixPJ_FZtq3oiToSv9gxZfjXqckxbAEQOpyq7PnaZKudc7dwLnt_7gfp3l1F1aQ/exec";
+
+// ── STATE ──────────────────────────────────────────────────
+var state = {
+  step: 1,
+  totalSteps: 6,
+  jenis: "",
+  platform: "",
+  ancamanAll: [],
+  ancamanUtama: "",
+  insiden: "",
+  dampakProd: "",
+  rto: "",
+  nilaiAset: ""
+};
+
+// ── STEP LABELS ────────────────────────────────────────────
+var stepLabels = [
+  "Informasi Pengisi",
+  "Identifikasi Aset",
+  "Kondisi Teknis",
+  "Penilaian Ancaman",
+  "Dampak Bisnis",
+  "Penutup & Submit"
+];
+
+// ── INIT ───────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  renderProgress();
+  loadHostFisik();
+  setDefaultDate();
+  attachLiveUpdate();
+  updateChecklist();
+});
+
+function setDefaultDate() {
+  var d = new Date();
+  var s = d.getFullYear() + "-" +
+          String(d.getMonth()+1).padStart(2,"0") + "-" +
+          String(d.getDate()).padStart(2,"0");
+  document.getElementById("tglIsi").value = s;
+}
+
+// ── PROGRESS ───────────────────────────────────────────────
+function renderProgress() {
+  var wrap = document.getElementById("progSteps");
+  wrap.innerHTML = "";
+  for (var i = 1; i <= state.totalSteps; i++) {
+    var d = document.createElement("div");
+    d.className = "prog-step" +
+      (i < state.step ? " done" : i === state.step ? " active" : "");
+    wrap.appendChild(d);
+  }
+  document.getElementById("progLabel").textContent =
+    "Step " + state.step + " dari " + state.totalSteps;
+  document.getElementById("progTitle").textContent =
+    stepLabels[state.step - 1];
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────
+function showStep(n) {
+  document.querySelectorAll(".step-section").forEach(function(s) {
+    s.classList.remove("active");
+  });
+  document.getElementById("step" + n).classList.add("active");
+  state.step = n;
+  renderProgress();
+  window.scrollTo({top: 0, behavior: "smooth"});
+
+  var cl = document.getElementById("sidebarChecklist");
+  var sc = document.getElementById("sidebarScore");
+  if (n === 6) {
+    if (cl) cl.style.display = "none";
+    if (sc) sc.style.display = "block";
+    updateScore(); // hitung skor HANYA saat masuk step 6
+  } else {
+    if (cl) cl.style.display = "block";
+    if (sc) sc.style.display = "none";
+  }
+  updateChecklist();
+}
+
+function nextStep(from) {
+  if (!validateStep(from)) return;
+  showStep(from + 1);
+}
+
+function prevStep(from) {
+  showStep(from - 1);
+}
+
+// ── VALIDATION ─────────────────────────────────────────────
+function validateStep(step) {
+  var ok = true;
+  var msg = "Mohon isi semua field yang wajib diisi (*)";
+
+  if (step === 1) {
+    if (!v("dept") || !v("namaPengisi") || !v("jabatan") ||
+        !v("emailPengisi") || !v("tglIsi") || !v("lokasi")) {
+      alert(msg); ok = false;
+    }
+  }
+  if (step === 2) {
+    if (!v("namaAset") || !state.jenis) { alert(msg); ok = false; return false; }
+    if (state.jenis === "Server Physical") {
+      if (!v("vendor") || !v("tahunBeli") || !v("osPhysical")) { alert(msg); ok = false; }
+    }
+    if (state.jenis === "Virtual Machine") {
+      if (!state.platform || !v("hostFisik") || !v("osVM") ||
+          !v("snapshot") || !v("jumlahHost")) { alert(msg); ok = false; }
+    }
+    if (!v("picTeknis") || !v("kontakPIC")) { alert(msg); ok = false; }
+  }
+  if (step === 3) {
+    if (!v("patch") || !v("koneksi") || !v("akses") ||
+        !v("backup") || !v("monitoring") || !v("antivirus") ||
+        !v("auditTerakhir")) { alert(msg); ok = false; }
+  }
+  if (step === 4) {
+    if (state.ancamanAll.length === 0 || !state.ancamanUtama || !state.insiden) {
+      alert("Mohon pilih ancaman di Bagian A, ancaman utama di Bagian B, dan riwayat insiden");
+      ok = false;
+    }
+  }
+  if (step === 5) {
+    if (!state.dampakProd || !state.rto || !state.nilaiAset || !v("sopDarurat")) {
+      alert(msg); ok = false;
+    }
+  }
+  return ok;
+}
+
+function v(id) {
+  var el = document.getElementById(id);
+  return el && el.value && el.value.trim() !== "";
+}
+
+// ── JENIS ASET SELECTION ───────────────────────────────────
+function pickJenis(val, el) {
+  state.jenis = val;
+  document.querySelectorAll("#jenisGroup .radio-opt").forEach(function(o) {
+    o.classList.remove("selected");
+    o.querySelector("input").checked = false;
+  });
+  el.classList.add("selected");
+  el.querySelector("input").checked = true;
+
+  // Show/hide conditional blocks
+  var phys = document.getElementById("physBlock");
+  var vm   = document.getElementById("vmBlock");
+  phys.classList.remove("visible");
+  vm.classList.remove("visible");
+
+  if (val === "Server Physical") phys.classList.add("visible");
+  if (val === "Virtual Machine") vm.classList.add("visible");
+
+  updateSummary();
+}
+
+function pickPlatform(val, el) {
+  state.platform = val;
+  document.querySelectorAll("#platformGroup .radio-opt").forEach(function(o) {
+    o.classList.remove("selected");
+    o.querySelector("input").checked = false;
+  });
+  el.classList.add("selected");
+  el.querySelector("input").checked = true;
+  updateScore();
+}
+
+function pickRadio(stateKey, val, el) {
+  state[stateKey] = val;
+  var grp = el.closest(".radio-group");
+  if (grp) {
+    grp.querySelectorAll(".radio-opt").forEach(function(o) {
+      o.classList.remove("selected");
+      o.querySelector("input").checked = false;
+    });
+  }
+  el.classList.add("selected");
+  el.querySelector("input").checked = true;
+  updateScore();
+}
+
+// ── ANCAMAN ────────────────────────────────────────────────
+function toggleAncaman(val, el) {
+  var cb = el.querySelector("input[type=checkbox]");
+  var idx = state.ancamanAll.indexOf(val);
+  if (idx > -1) {
+    state.ancamanAll.splice(idx, 1);
+    el.classList.remove("selected");
+    cb.checked = false;
+    if (state.ancamanUtama === val) state.ancamanUtama = "";
+  } else {
+    state.ancamanAll.push(val);
+    el.classList.add("selected");
+    cb.checked = true;
+  }
+  renderAncamanUtama();
+  updateScore();
+}
+
+function renderAncamanUtama() {
+  var wrap = document.getElementById("ancamanUtamaGroup");
+  if (state.ancamanAll.length === 0) {
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--gray4);font-style:italic;padding:8px 0">Centang minimal satu ancaman di Bagian A terlebih dahulu</div>';
+    return;
+  }
+  wrap.innerHTML = "";
+  state.ancamanAll.forEach(function(val) {
+    var d = document.createElement("label");
+    d.className = "check-opt" + (state.ancamanUtama === val ? " selected-primary" : "");
+    d.onclick = function() { pickAncamanUtama(val, d); };
+    d.innerHTML = '<input type="radio" name="ancamanUtama" value="' + val + '"' +
+      (state.ancamanUtama === val ? " checked" : "") + ' style="accent-color:var(--green)">' +
+      '<div><div class="radio-label">' + val + '</div>' +
+      '<div class="radio-desc">Ancaman ini yang akan dipakai sebagai dasar risk score utama</div></div>';
+    wrap.appendChild(d);
+  });
+}
+
+function pickAncamanUtama(val, el) {
+  state.ancamanUtama = val;
+  document.querySelectorAll("#ancamanUtamaGroup .check-opt").forEach(function(o) {
+    o.classList.remove("selected-primary");
+    o.querySelector("input").checked = false;
+  });
+  el.classList.add("selected-primary");
+  el.querySelector("input").checked = true;
+  updateScore();
+}
+
+// ── LOAD HOST FISIK (dari Apps Script) ────────────────────
+function loadHostFisik() {
+  var sel = document.getElementById("hostFisik");
+  var status = document.getElementById("hostLoadStatus");
+
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf("PASTE_") > -1) {
+    sel.innerHTML = '<option value="">— Apps Script URL belum dikonfigurasi —</option>';
+    status.innerHTML = '⚠️ APPS_SCRIPT_URL belum diisi. Lihat instruksi di bawah.';
+    return;
+  }
+
+  status.innerHTML = '⏳ Memuat daftar server physical...';
+  sel.innerHTML = '<option value="">— Memuat... —</option>';
+
+  var url = APPS_SCRIPT_URL + "?action=getHostFisik";
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      sel.innerHTML = '<option value="">— Pilih host fisik —</option>';
+      if (data.hosts && data.hosts.length > 0) {
+        data.hosts.forEach(function(h) {
+          var opt = document.createElement("option");
+          opt.value = h;
+          opt.textContent = h;
+          sel.appendChild(opt);
+        });
+        var other = document.createElement("option");
+        other.value = "Lainnya / belum terdaftar";
+        other.textContent = "Lainnya / belum terdaftar — sebutkan di Informasi Tambahan";
+        sel.appendChild(other);
+        status.innerHTML = '✅ ' + data.hosts.length + ' host fisik ditemukan';
+      } else {
+        sel.innerHTML += '<option value="Lainnya / belum terdaftar">Lainnya / belum terdaftar</option>';
+        status.innerHTML = 'ℹ️ Belum ada server physical terdaftar';
+      }
+    })
+    .catch(function(err) {
+      sel.innerHTML = '<option value="">— Gagal memuat, isi manual —</option>';
+      // Fallback: isi manual
+      var inp = document.createElement("input");
+      inp.type = "text";
+      inp.id = "hostFisik";
+      inp.placeholder = "Ketik nama host fisik secara manual";
+      inp.style.cssText = "width:100%;padding:9px 12px;border:1.5px solid var(--gray3);border-radius:8px;font-size:13px;margin-top:6px";
+      sel.parentNode.insertBefore(inp, sel.nextSibling);
+      status.innerHTML = '⚠️ Koneksi gagal — isi manual';
+    });
+}
+
+// ── LIVE UPDATE (summary & score saat ketik) ───────────────
+function attachLiveUpdate() {
+  ["dept","namaAset","lokasi","vlan"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("change", function() {
+      updateSummary();
+      updateScore();
+    });
+  });
+  var na = document.getElementById("namaAset");
+  if (na) na.addEventListener("input", updateSummary);
+
+  // Selects
+  ["patch","koneksi","akses","backup","monitoring","auditTerakhir",
+   "osPhysical","osVM","snapshot","jumlahHost","sopDarurat","tahunBeli",
+   "antivirus"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("change", function() {
+      updateChecklist();
+      if (state.step === 6) updateScore();
+    });
+  });
+}
+
+function updateSummary() {
+  setText("sumDept",   document.getElementById("dept").value || "—");
+  setText("sumJenis",  state.jenis || "—");
+  setText("sumNama",   document.getElementById("namaAset").value || "—");
+  setText("sumLokasi", document.getElementById("lokasi").value || "—");
+  setText("sumVlan",   document.getElementById("vlan").value || "—");
+}
+
+function setText(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = val.length > 20 ? val.substring(0,18)+"…" : val;
+}
+
+// ── RISK SCORE CALCULATION ─────────────────────────────────
+function updateScore() {
+  var L = 2, I = 1;
+
+  // Usia aset
+  var tahun = gv("tahunBeli");
+  if (tahun.indexOf("Sebelum 2015") > -1) L += 2;
+  else if (tahun.indexOf("2015 hingga 2017") > -1) L += 1;
+
+  // Patch
+  var patch = gv("patch");
+  if (patch.indexOf("Tidak pernah") > -1) L += 2;
+  else if (patch.indexOf("Jarang") > -1) L += 1;
+  else if (patch.indexOf("Terlambat") > -1) L += 1;
+
+  // Koneksi
+  var kon = gv("koneksi");
+  if (kon.indexOf("tanpa perlindungan") > -1) L += 2;
+  else if (kon.indexOf("IT dan OT") > -1) L += 1;
+  else if (kon.indexOf("air-gap") > -1) L -= 1;
+
+  // Insiden
+  if (state.insiden.indexOf("besar") > -1) L += 2;
+  else if (state.insiden.indexOf("sedang") > -1) L += 1;
+
+  // Backup
+  var bkp = gv("backup");
+  if (bkp.indexOf("Tidak ada") > -1) L += 1;
+  else if (bkp.indexOf("manual") > -1) L += 1;
+
+  // Monitor
+  if (gv("monitoring").indexOf("Tidak ada") > -1) L += 1;
+
+  // Akses
+  var akses = gv("akses");
+  if (akses.indexOf("Tidak ada") > -1) L += 2;
+  else if (akses.indexOf("sederhana") > -1 || akses.indexOf("jarang") > -1) L += 1;
+
+  // Audit
+  var aud = gv("auditTerakhir");
+  if (aud.indexOf("Belum pernah") > -1) L += 1;
+  else if (aud.indexOf("Lebih dari 2 tahun") > -1) L += 1;
+
+  // VM
+  if (gv("snapshot").indexOf("Tidak ada") > -1) L += 1;
+  if (gv("jumlahHost").indexOf("1 host saja") > -1) L += 1;
+
+  // OS EOL
+  var os = gv("osPhysical") + gv("osVM");
+  if (os.indexOf("EOL") > -1 || os.indexOf("⚠️") > -1) L += 2;
+
+  // OT Safety
+  if (state.ancamanUtama === "OT Safety") L += 1;
+
+  // Dept multiplier
+  var dept = gv("dept");
+  if (dept.indexOf("Power Plant") > -1) L = Math.round(L * 1.3);
+  else if (dept.indexOf("Automation") > -1) L = Math.round(L * 1.2);
+
+  L = Math.min(5, Math.max(1, L));
+
+  // Impact
+  if (state.dampakProd.indexOf("total") > -1) I += 3;
+  else if (state.dampakProd.indexOf("Sebagian") > -1) I += 2;
+  else if (state.dampakProd.indexOf("melambat") > -1) I += 1;
+
+  if (state.rto.indexOf("1 jam") > -1) I += 2;
+  else if (state.rto.indexOf("4 jam") > -1) I += 1;
+
+  if (state.nilaiAset.indexOf("Lebih dari Rp 200") > -1) I += 1;
+  else if (state.nilaiAset.indexOf("Rp 50 juta") > -1) I += 1;
+
+  if (bkp.indexOf("Tidak ada") > -1) I += 1;
+  if (state.ancamanUtama === "OT Safety") I += 2;
+  else if (state.ancamanUtama === "Kehilangan Data") I += 1;
+
+  I = Math.min(5, Math.max(1, I));
+
+  var score = L * I;
+  var pct   = Math.round((score / 25) * 100);
+
+  document.getElementById("scoreL").textContent = L;
+  document.getElementById("scoreI").textContent = I;
+  document.getElementById("scoreTotal").textContent = score;
+  document.getElementById("gaugeFill").style.width = pct + "%";
+  document.getElementById("gaugePct").textContent  = pct + "%";
+
+  var lvlEl = document.getElementById("riskLevel");
+  lvlEl.className = "risk-level";
+  var cls, lbl;
+  if (score >= 20)      { cls = "lvl-extreme";  lbl = "🚨 EXTREME — Skor " + score; }
+  else if (score >= 15) { cls = "lvl-critical"; lbl = "🔴 CRITICAL — Skor " + score; }
+  else if (score >= 10) { cls = "lvl-high";     lbl = "🟠 HIGH — Skor " + score; }
+  else if (score >= 5)  { cls = "lvl-medium";   lbl = "🟡 MEDIUM — Skor " + score; }
+  else                  { cls = "lvl-low";       lbl = "🟢 LOW — Skor " + score; }
+  lvlEl.classList.add(cls);
+  lvlEl.textContent = lbl;
+
+  // Tampilkan faktor-faktor yang mempengaruhi skor
+  var factors = document.getElementById("riskFactors");
+  if (factors) {
+    var items = [];
+    if (gv("patch").indexOf("Tidak pernah") > -1 || gv("patch").indexOf("EOL") > -1)
+      items.push(["⬆️ L+2","OS / Firmware tidak pernah diupdate atau EOL","red"]);
+    else if (gv("patch").indexOf("Jarang") > -1 || gv("patch").indexOf("Terlambat") > -1)
+      items.push(["⬆️ L+1","Patch sering terlambat","orange"]);
+    if (gv("backup").indexOf("Tidak ada") > -1)
+      items.push(["⬆️ L+1 I+1","Tidak ada backup sama sekali","red"]);
+    if (gv("koneksi").indexOf("IT dan OT") > -1)
+      items.push(["⬆️ L+1","IT dan OT belum tersegmentasi","orange"]);
+    if (gv("akses").indexOf("Tidak ada") > -1)
+      items.push(["⬆️ L+2","Tidak ada kontrol akses","red"]);
+    if (gv("monitoring").indexOf("Tidak ada") > -1)
+      items.push(["⬆️ L+1","Tidak ada monitoring","orange"]);
+    if (gv("auditTerakhir").indexOf("Belum") > -1)
+      items.push(["⬆️ L+1","Belum pernah diaudit","orange"]);
+    if (gv("osPhysical").indexOf("EOL") > -1 || gv("osVM").indexOf("EOL") > -1)
+      items.push(["⬆️ L+2","OS versi EOL terdeteksi","red"]);
+    if (gv("jumlahHost").indexOf("1 host") > -1)
+      items.push(["⬆️ L+1","VM di 1 host saja (SPOF)","orange"]);
+    if (gv("snapshot").indexOf("Tidak ada") > -1)
+      items.push(["⬆️ L+1","Tidak ada snapshot VM","orange"]);
+    if (state.ancamanUtama === "OT Safety")
+      items.push(["⬆️ L+1 I+2","Ancaman OT Safety — risiko keselamatan","red"]);
+    if (state.dampakProd.indexOf("total") > -1)
+      items.push(["⬆️ I+3","Seluruh produksi berhenti jika aset mati","red"]);
+    if (state.rto.indexOf("1 jam") > -1)
+      items.push(["⬆️ I+2","RTO sangat ketat — 1 jam","orange"]);
+    if (gv("dept").indexOf("Power Plant") > -1)
+      items.push(["⬆️ ×1.3","Multiplier Power Plant Team aktif","orange"]);
+    else if (gv("dept").indexOf("Automation") > -1)
+      items.push(["⬆️ ×1.2","Multiplier Automation Team aktif","orange"]);
+
+    if (items.length === 0) {
+      factors.innerHTML = '<div style="font-size:11px;color:var(--gray4)">Tidak ada faktor risiko signifikan yang terdeteksi</div>';
+    } else {
+      factors.innerHTML = items.map(function(it) {
+        var c = it[2] === "red" ? "#FFE0D0" : "#FFF2CC";
+        var tc = it[2] === "red" ? "#8A2000" : "#6B4A00";
+        return '<div style="display:flex;gap:6px;align-items:flex-start;font-size:11px;background:' + c + ';border-radius:5px;padding:5px 8px">'
+          + '<span style="font-weight:700;color:' + tc + ';white-space:nowrap">' + it[0] + '</span>'
+          + '<span style="color:' + tc + '">' + it[1] + '</span></div>';
+      }).join("");
+    }
+  }
+}
+
+function gv(id) {
+  var el = document.getElementById(id);
+  return el ? (el.value || "") : "";
+}
+
+
+// ── CHECKLIST SIDEBAR (step 1-5) ────────────────────────
+function updateChecklist() {
+  var wrap = document.getElementById("checklistItems");
+  if (!wrap) return;
+  var steps = [
+    { label:"Informasi Pengisi", done: !!(gv("dept") && gv("namaPengisi") && gv("jabatan") && gv("emailPengisi") && gv("lokasi")) },
+    { label:"Identifikasi Aset", done: !!(gv("namaAset") && state.jenis && gv("picTeknis")) },
+    { label:"Kondisi Teknis",    done: !!(gv("patch") && gv("koneksi") && gv("akses") && gv("backup")) },
+    { label:"Penilaian Ancaman", done: !!(state.ancamanAll.length > 0 && state.ancamanUtama && state.insiden) },
+    { label:"Dampak Bisnis",     done: !!(state.dampakProd && state.rto && state.nilaiAset) },
+  ];
+  wrap.innerHTML = steps.map(function(s, i) {
+    var isCurrent = (state.step === i + 1);
+    var icon = s.done ? "✅" : (isCurrent ? "📝" : "⬜");
+    var fw = isCurrent ? "600" : s.done ? "500" : "400";
+    var col = isCurrent ? "var(--navy2)" : s.done ? "var(--green)" : "var(--gray4)";
+    return '<div style="display:flex;gap:8px;align-items:center;font-size:12px;font-weight:' + fw + ';color:' + col + '">'
+      + '<span>' + icon + '</span><span>' + s.label + '</span></div>';
+  }).join("");
+}
+
+// ── SUBMIT ─────────────────────────────────────────────────
+function submitForm() {
+  var btn = document.getElementById("btnSubmit");
+  var st  = document.getElementById("submitStatus");
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Mengirim data...';
+  st.style.display = "none";
+
+  // Kumpulkan semua data
+  var payload = {
+    action:           "submitRisk",
+    dept:             gv("dept"),
+    namaPengisi:      gv("namaPengisi"),
+    jabatan:          gv("jabatan"),
+    emailPengisi:     gv("emailPengisi"),
+    tglIsi:           gv("tglIsi"),
+    lokasi:           gv("lokasi"),
+    namaAset:         gv("namaAset"),
+    idAset:           gv("idAset"),
+    jenisAset:        state.jenis,
+    // Physical
+    vendor:           gv("vendor"),
+    model:            gv("model"),
+    serialNumber:     gv("serialNumber"),
+    tahunBeli:        gv("tahunBeli"),
+    osPhysical:       gv("osPhysical"),
+    // VM
+    platform:         state.platform,
+    hostFisik:        gv("hostFisik"),
+    osVM:             gv("osVM"),
+    snapshot:         gv("snapshot"),
+    jumlahHost:       gv("jumlahHost"),
+    // Jaringan
+    vlan:             gv("vlan"),
+    ipAddress:        gv("ipAddress"),
+    hostname:         gv("hostname"),
+    picTeknis:        gv("picTeknis"),
+    kontakPIC:        gv("kontakPIC"),
+    vendorSupport:    gv("vendorSupport"),
+    // Teknis
+    patch:            gv("patch"),
+    koneksi:          gv("koneksi"),
+    akses:            gv("akses"),
+    backup:           gv("backup"),
+    monitoring:       gv("monitoring"),
+    antivirus:        gv("antivirus"),
+    auditTerakhir:    gv("auditTerakhir"),
+    // Ancaman
+    ancamanAll:       state.ancamanAll.join(", "),
+    ancamanUtama:     state.ancamanUtama,
+    insiden:          state.insiden,
+    keteranganInsiden:gv("keteranganInsiden"),
+    // Dampak
+    dampakProd:       state.dampakProd,
+    rto:              state.rto,
+    nilaiAset:        state.nilaiAset,
+    sopDarurat:       gv("sopDarurat"),
+    // Penutup
+    rekomitigasi:     gv("rekomitigasi"),
+    infoTambahan:     gv("infoTambahan"),
+    // Timestamp
+    timestamp:        new Date().toISOString()
+  };
+
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf("PASTE_") > -1) {
+    // Demo mode: tampilkan data tanpa kirim
+    st.className = "submit-status submit-ok";
+    st.innerHTML = "✅ <strong>Mode Demo</strong> — Data berhasil dikumpulkan! " +
+      "Untuk mengirim ke Sheets, isi APPS_SCRIPT_URL di bagian konfigurasi script.";
+    st.style.display = "block";
+    btn.disabled = false;
+    btn.innerHTML = "Submit Data Aset";
+    console.log("PAYLOAD:", JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.status === "ok") {
+      st.className = "submit-status submit-ok";
+      st.innerHTML = "✅ <strong>Data berhasil dikirim!</strong> Risk Score: " +
+        res.score + " (" + res.level + "). Cek email Anda untuk konfirmasi.";
+    } else {
+      throw new Error(res.message || "Unknown error");
+    }
+    st.style.display = "block";
+    btn.innerHTML = "✅ Terkirim";
+  })
+  .catch(function(err) {
+    st.className = "submit-status submit-err";
+    st.innerHTML = "❌ Gagal mengirim: " + err.message +
+      ". Coba lagi atau hubungi tim IT.";
+    st.style.display = "block";
+    btn.disabled = false;
+    btn.innerHTML = "Coba Submit Lagi";
+  });
+}
+</script>
+</body>
+</html>
