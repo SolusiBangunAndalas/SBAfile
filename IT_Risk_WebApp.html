@@ -1835,14 +1835,14 @@ function submitForm() {
     return;
   }
 
- // ✅ GANTI DENGAN INI:
+// Gunakan URLSearchParams — tidak trigger preflight CORS
+  var formData = new URLSearchParams();
+  formData.append("payload", JSON.stringify(payload));
+
   fetch(APPS_SCRIPT_URL, {
     method: "POST",
     redirect: "follow",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify(payload)
+    body: formData
   })
   .then(function(r) {
     if (!r.ok) throw new Error("HTTP " + r.status);
@@ -1862,8 +1862,7 @@ function submitForm() {
   })
   .catch(function(err) {
     st.className = "submit-status submit-err";
-    st.innerHTML = "❌ Gagal mengirim: " + err.message +
-      ". Coba lagi atau hubungi tim IT.";
+    st.innerHTML = "❌ Gagal mengirim: " + err.message;
     st.style.display = "block";
     btn.disabled = false;
     btn.innerHTML = "Coba Submit Lagi";
